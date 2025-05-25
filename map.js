@@ -13,23 +13,14 @@ const map = new mapboxgl.Map({
 
 let originalData;
 
-// Parse "Date and Time" like "8/8/2020 6:15:00 AM" into minutes since midnight
 function minutesSinceMidnight(dateTimeStr) {
   const parts = dateTimeStr.split(' ');
   if (parts.length !== 3) return null;
-
   const timePart = parts[1];
   const meridiem = parts[2];
-
   let [hours, minutes] = timePart.split(':').map(Number);
-
-  if (meridiem === 'PM' && hours !== 12) {
-    hours += 12;
-  }
-  if (meridiem === 'AM' && hours === 12) {
-    hours = 0;
-  }
-
+  if (meridiem === 'PM' && hours !== 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
   return hours * 60 + minutes;
 }
 
@@ -43,14 +34,12 @@ function formatTime(minutes) {
 
 function filterFeaturesByTime(features, timeFilter) {
   if (timeFilter === -1) return features;
-
   return features.filter((feature) => {
     const dt = feature.properties['Date and Time'];
     if (!dt) return false;
     const mins = minutesSinceMidnight(dt);
     if (mins === null) return false;
-
-    return Math.abs(mins - timeFilter) <= 60; // within ±60 minutes
+    return Math.abs(mins - timeFilter) <= 60;
   });
 }
 
@@ -69,9 +58,45 @@ map.on('load', async () => {
     source: 'nash-crash',
     paint: {
       'circle-color': 'red',
-      'circle-opacity': 0.3,
-      'circle-radius': 6,
+      'circle-opacity': 0.5,
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['get', 'Number of Motor Vehicles'],
+        1, 4,
+        2, 6,
+        3, 8,
+        4, 10,
+        5, 12,
+        6, 14
+      ]
     },
+  });
+  
+  map.on('mouseenter', 'crashes', (e) => {
+    map.getCanvas().style.cursor = 'pointer';
+    const feature = e.features[0];
+    const props = feature.properties;
+    const coords = feature.geometry.coordinates;
+
+    const time = props['Date and Time'];
+    const vehicles = props['Number of Motor Vehicles'];
+    const type = props['Collision Type Description'];
+
+    new mapboxgl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+    })
+      .setLngLat(coords)
+      .setHTML(`<strong>Time:</strong> ${time}<br><strong>Vehicles:</strong> ${vehicles}<br><strong>Type:</strong> ${type}`)
+      .addTo(map);
+  });
+
+  map.on('mouseleave', 'crashes', () => {
+    map.getCanvas().style.cursor = '';
+    // Close popup if needed
+    const popups = document.getElementsByClassName('mapboxgl-popup');
+    if (popups.length) popups[0].remove();
   });
 
   const timeSlider = document.getElementById('time-slider');
