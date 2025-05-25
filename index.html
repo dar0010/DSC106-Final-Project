@@ -1,19 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nashville Accidents</title>
-    <link rel="stylesheet" href="global.css" />
-    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link
-        href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
-        rel="stylesheet"
-    />
-    <script src="map.js" type="module"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nashville Crash Data 🚗</title>
+  <link href="global.css" rel="stylesheet" />
+  <script type="module" src="map.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/dist/mapbox-gl.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/dist/mapbox-gl.css" rel="stylesheet" />
 </head>
 <body>
+  <header style="display: flex; gap: 1em; align-items: baseline;">
     <h1>Nashville Crash Data 🚗</h1>
-    <div id="map"></div>
+
+    <label style="margin-left: auto;">
+      Filter by time:
+      <input
+        type="range"
+        id="time-slider"
+        min="-1"
+        max="1439"
+        value="-1"
+        step="1"
+        style="vertical-align: middle;"
+      />
+      <time id="selected-time" style="display: block; font-weight: bold;"></time>
+      <em id="any-time" style="display: block; color: #666; font-style: italic;">
+        (any time)
+      </em>
+    </label>
+  </header>
+
+  <div id="map"></div>
 </body>
 </html>
