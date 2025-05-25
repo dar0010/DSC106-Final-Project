@@ -16,7 +16,7 @@ const map = new mapboxgl.Map({
 map.on('load', async () => {
     map.addSource('nash-crash', {
         type: 'geojson',
-        data: 'https://www.dropbox.com/scl/fi/bsmo1dokp9wiewatl63ut/accidents.geojson?rlkey=dkd33m4vu2a53bunoqk2c4r8p&st=dk649ru6&raw=1'
+        data: 'https://dar0010.github.io/nashville-crash-data/accidents.geojson'
     });
 
     map.addLayer({
@@ -25,7 +25,7 @@ map.on('load', async () => {
         source: 'nash-crash',
         paint: {
             'circle-color': 'red',
-            'circle-opacity': '0.8'
+            'circle-opacity': 0.3,
         }
-    })
-})
+    });
+});
