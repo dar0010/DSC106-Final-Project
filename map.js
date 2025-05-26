@@ -58,7 +58,7 @@ map.on('load', async () => {
     source: 'nash-crash',
     paint: {
       'circle-color': 'red',
-      'circle-opacity': 0.5,
+      'circle-opacity': 0.3,
       'circle-radius': [
         'interpolate',
         ['linear'],
