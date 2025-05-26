@@ -12,6 +12,12 @@ const map = new mapboxgl.Map({
 });
 
 let originalData;
+let selectedYear = 'all';
+
+function extractYear(dateTimeStr) {
+  const datePart = dateTimeStr?.split(' ')[0];
+  return datePart ? new Date(datePart).getFullYear() : null;
+}
 
 function minutesSinceMidnight(dateTimeStr) {
   const parts = dateTimeStr.split(' ');
@@ -32,14 +38,16 @@ function formatTime(minutes) {
   return `${displayHr}:${mins.toString().padStart(2, '0')} ${ampm}`;
 }
 
-function filterFeaturesByTime(features, timeFilter) {
-  if (timeFilter === -1) return features;
+function filterFeatures(features, year, timeFilter) {
   return features.filter((feature) => {
     const dt = feature.properties['Date and Time'];
     if (!dt) return false;
+
+    const yearMatch = year === 'all' || extractYear(dt) === parseInt(year);
     const mins = minutesSinceMidnight(dt);
-    if (mins === null) return false;
-    return Math.abs(mins - timeFilter) <= 60;
+    const timeMatch = timeFilter === -1 || (mins !== null && Math.abs(mins - timeFilter) <= 60);
+
+    return yearMatch && timeMatch;
   });
 }
 
@@ -72,6 +80,16 @@ map.on('load', async () => {
       ]
     },
   });
+
+  const yearDropDown = document.getElementById('year-select');
+  const years = [...new Set(originalData.features.map(f => extractYear(f.properties['Date and Time'])).filter(y => y))].sort();
+
+  yearDropDown.innerHTML = `<option value="all">All Years</option>` +
+    years.map(y => `<option value="${y}">${y}</option>`).join('');
+  
+  yearDropDown.addEventListener('change', () => {
+    selectedYear = yearDropDown.value;
+  });
   
   map.on('mouseenter', 'crashes', (e) => {
     map.getCanvas().style.cursor = 'pointer';
@@ -103,7 +121,7 @@ map.on('load', async () => {
   const selectedTime = document.getElementById('selected-time');
   const anyTimeLabel = document.getElementById('any-time');
 
-  function updateTimeDisplay() {
+  function updateFilters() {
     const timeFilter = Number(timeSlider.value);
 
     if (timeFilter === -1) {
@@ -114,7 +132,7 @@ map.on('load', async () => {
       anyTimeLabel.style.display = 'none';
     }
 
-    const filteredFeatures = filterFeaturesByTime(originalData.features, timeFilter);
+    const filteredFeatures = filterFeatures(originalData.features, selectedYear, timeFilter);
 
     map.getSource('nash-crash').setData({
       type: 'FeatureCollection',
@@ -122,7 +140,7 @@ map.on('load', async () => {
     });
   }
 
-  timeSlider.addEventListener('input', updateTimeDisplay);
+  timeSlider.addEventListener('input', updateFilters);
 
-  updateTimeDisplay();
+  updateFilters();
 });
