@@ -13,6 +13,9 @@ const map = new mapboxgl.Map({
 
 let originalData;
 let selectedYear = 'all';
+let selectedWeather = 'all';
+let selectedHitRun = 'all';
+let selectedIllumination = 'all';
 
 function extractYear(dateTimeStr) {
   const datePart = dateTimeStr?.split(' ')[0];
@@ -38,16 +41,31 @@ function formatTime(minutes) {
   return `${displayHr}:${mins.toString().padStart(2, '0')} ${ampm}`;
 }
 
-function filterFeatures(features, year, timeFilter) {
+// Now takes weather, hitRun, illumination filters
+function filterFeatures(features, year, timeFilter, weather, hitRun, illumination) {
   return features.filter((feature) => {
-    const dt = feature.properties['Date and Time'];
+    const props = feature.properties;
+    const dt = props['Date and Time'];
     if (!dt) return false;
 
+    // year & time
     const yearMatch = year === 'all' || extractYear(dt) === parseInt(year);
     const mins = minutesSinceMidnight(dt);
     const timeMatch = timeFilter === -1 || (mins !== null && Math.abs(mins - timeFilter) <= 60);
 
-    return yearMatch && timeMatch;
+    // weather
+    const weatherVal = props['Weather'] || props['Weather Description'] || '';
+    const weatherMatch = weather === 'all' || weatherVal.toUpperCase() === weather;
+
+    // hit and run
+    const hrVal = (props['Hit and Run'] || props['Hit and Run Flag'] || '').toUpperCase();
+    const hitRunMatch = hitRun === 'all' || hrVal === hitRun;
+
+    // illumination
+    const illumVal = props['Illumination'] || props['Illumination Condition'] || '';
+    const illuminationMatch = illumination === 'all' || illumVal.toUpperCase() === illumination;
+
+    return yearMatch && timeMatch && weatherMatch && hitRunMatch && illuminationMatch;
   });
 }
 
@@ -81,16 +99,37 @@ map.on('load', async () => {
     },
   });
 
+  // Year dropdown
   const yearDropDown = document.getElementById('year-select');
-  const years = [...new Set(originalData.features.map(f => extractYear(f.properties['Date and Time'])).filter(y => y))].sort();
-
-  yearDropDown.innerHTML = `<option value="all">All Years</option>` +
-    years.map(y => `<option value="${y}">${y}</option>`).join('');
-  
+  const years = [...new Set(originalData.features
+    .map(f => extractYear(f.properties['Date and Time']))
+    .filter(y => y))].sort();
+  yearDropDown.innerHTML = `<option value="all">All Years</option>`
+    + years.map(y => `<option value="${y}">${y}</option>`).join('');
   yearDropDown.addEventListener('change', () => {
     selectedYear = yearDropDown.value;
+    updateFilters();
   });
-  
+
+  // New filter elements
+  const weatherSelect = document.getElementById('weather-select');
+  const hitrunSelect = document.getElementById('hitrun-select');
+  const illumSelect = document.getElementById('illumination-select');
+
+  weatherSelect.addEventListener('change', () => {
+    selectedWeather = weatherSelect.value;
+    updateFilters();
+  });
+  hitrunSelect.addEventListener('change', () => {
+    selectedHitRun = hitrunSelect.value;
+    updateFilters();
+  });
+  illumSelect.addEventListener('change', () => {
+    selectedIllumination = illumSelect.value;
+    updateFilters();
+  });
+
+  // Popup on hover
   map.on('mouseenter', 'crashes', (e) => {
     map.getCanvas().style.cursor = 'pointer';
     const feature = e.features[0];
@@ -100,30 +139,36 @@ map.on('load', async () => {
     const time = props['Date and Time'];
     const vehicles = props['Number of Motor Vehicles'];
     const type = props['Collision Type Description'];
+    // show new fields too
+    const weather = props['Weather'] || props['Weather Description'];
+    const hitrun = props['Hit and Run'] || props['Hit and Run Flag'];
+    const illum = props['Illumination'] || props['Illumination Condition'];
 
-    new mapboxgl.Popup({
-      closeButton: false,
-      closeOnClick: false,
-    })
+    new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
       .setLngLat(coords)
-      .setHTML(`<strong>Time:</strong> ${time}<br><strong>Vehicles:</strong> ${vehicles}<br><strong>Type:</strong> ${type}`)
+      .setHTML(`
+        <strong>Time:</strong> ${time}<br>
+        <strong>Vehicles:</strong> ${vehicles}<br>
+        <strong>Type:</strong> ${type}<br>
+        <strong>Weather:</strong> ${weather || 'N/A'}<br>
+        <strong>Hit & Run:</strong> ${hitrun || 'N/A'}<br>
+        <strong>Light:</strong> ${illum || 'N/A'}
+      `)
       .addTo(map);
   });
-
   map.on('mouseleave', 'crashes', () => {
     map.getCanvas().style.cursor = '';
-    // Close popup if needed
     const popups = document.getElementsByClassName('mapboxgl-popup');
     if (popups.length) popups[0].remove();
   });
 
+  // Time slider
   const timeSlider = document.getElementById('time-slider');
   const selectedTime = document.getElementById('selected-time');
   const anyTimeLabel = document.getElementById('any-time');
 
   function updateFilters() {
     const timeFilter = Number(timeSlider.value);
-
     if (timeFilter === -1) {
       selectedTime.textContent = '';
       anyTimeLabel.style.display = 'block';
@@ -132,15 +177,21 @@ map.on('load', async () => {
       anyTimeLabel.style.display = 'none';
     }
 
-    const filteredFeatures = filterFeatures(originalData.features, selectedYear, timeFilter);
+    const filtered = filterFeatures(
+      originalData.features,
+      selectedYear,
+      timeFilter,
+      selectedWeather,
+      selectedHitRun,
+      selectedIllumination
+    );
 
     map.getSource('nash-crash').setData({
       type: 'FeatureCollection',
-      features: filteredFeatures,
+      features: filtered,
     });
   }
 
   timeSlider.addEventListener('input', updateFilters);
-
   updateFilters();
 });

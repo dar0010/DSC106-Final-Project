@@ -20,6 +20,12 @@ header label {
   user-select: none;
 }
 
+/* Ensure all selects line up nicely */
+header select {
+  margin: 0 0.5em;
+  vertical-align: middle;
+}
+
 #time-slider {
   width: 200px;
   vertical-align: middle;
