@@ -70,7 +70,7 @@ function filterFeatures(features, year, timeFilter, weather, hitRun, illuminatio
 }
 
 map.on('load', async () => {
-  const response = await fetch('https://dar0010.github.io/nashville-crash-data/accidents.geojson');
+  const response = await fetch('https://dar0010.github.io/nashville-crash-data/accidents_injury_fatality.geojson');
   originalData = await response.json();
 
   map.addSource('nash-crash', {
