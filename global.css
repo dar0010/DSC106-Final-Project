@@ -42,3 +42,33 @@ header select {
   color: #999;
   font-style: italic;
 }
+
+#scrolly {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+#map-story {
+  flex: 1;
+  padding: 1rem;
+}
+
+.step {
+  margin: 0 auto 70vh auto;
+  padding: 2em 1em;
+  border-left: 4px solid transparent;
+}
+
+.step.is-active {
+  border-color: black;
+  font-weight: bold;
+}
+
+
+#map {
+  flex: 1;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}

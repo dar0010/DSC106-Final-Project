@@ -1,4 +1,5 @@
 import mapboxgl from 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/+esm';
+import scrollama from 'https://cdn.jsdelivr.net/npm/scrollama@3.2.0/+esm';
 
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGFyMDA5IiwiYSI6ImNtYXI0ODUwbDA2eXgya29reHVlZjRkdHIifQ.XS8fk5IDe00_wwXmWsrT-A';
 
@@ -16,6 +17,11 @@ let selectedYear = 'all';
 let selectedWeather = 'all';
 let selectedHitRun = 'all';
 let selectedIllumination = 'all';
+
+const timeSlider = document.getElementById('time-slider');
+const selectedTime = document.getElementById('selected-time');
+const anyTimeLabel = document.getElementById('any-time');
+
 
 function extractYear(dateTimeStr) {
   const datePart = dateTimeStr?.split(' ')[0];
@@ -66,6 +72,31 @@ function filterFeatures(features, year, timeFilter, weather, hitRun, illuminatio
     const illuminationMatch = illumination === 'all' || illumVal.toUpperCase() === illumination;
 
     return yearMatch && timeMatch && weatherMatch && hitRunMatch && illuminationMatch;
+  });
+}
+
+function updateFilters() {
+  const timeFilter = Number(timeSlider.value);
+  if (timeFilter === -1) {
+    selectedTime.textContent = '';
+    anyTimeLabel.style.display = 'block';
+  } else {
+    selectedTime.textContent = formatTime(timeFilter);
+    anyTimeLabel.style.display = 'none';
+  }
+
+  const filtered = filterFeatures(
+    originalData.features,
+    selectedYear,
+    timeFilter,
+    selectedWeather,
+    selectedHitRun,
+    selectedIllumination
+  );
+
+  map.getSource('nash-crash').setData({
+    type: 'FeatureCollection',
+    features: filtered,
   });
 }
 
@@ -163,35 +194,69 @@ map.on('load', async () => {
   });
 
   // Time slider
-  const timeSlider = document.getElementById('time-slider');
-  const selectedTime = document.getElementById('selected-time');
-  const anyTimeLabel = document.getElementById('any-time');
-
-  function updateFilters() {
-    const timeFilter = Number(timeSlider.value);
-    if (timeFilter === -1) {
-      selectedTime.textContent = '';
-      anyTimeLabel.style.display = 'block';
-    } else {
-      selectedTime.textContent = formatTime(timeFilter);
-      anyTimeLabel.style.display = 'none';
-    }
-
-    const filtered = filterFeatures(
-      originalData.features,
-      selectedYear,
-      timeFilter,
-      selectedWeather,
-      selectedHitRun,
-      selectedIllumination
-    );
-
-    map.getSource('nash-crash').setData({
-      type: 'FeatureCollection',
-      features: filtered,
-    });
-  }
+  //const timeSlider = document.getElementById('time-slider');
+  //const selectedTime = document.getElementById('selected-time');
+  //const anyTimeLabel = document.getElementById('any-time');
 
   timeSlider.addEventListener('input', updateFilters);
+
+  const scroller = scrollama();
+
+  scroller
+    .setup({
+      step: '.step',
+      offset: 0.5,
+      debug: false,
+    })
+    .onStepEnter(({element, index}) => {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('is-active'));
+      element.classList.add('is-active');
+
+      if (index === 0) {
+        selectedYear = '2018';
+        selectedWeather = 'all';
+        selectedIllumination = 'all';
+        selectedHitRun = 'all';
+      } else if (index === 1) {
+        selectedYear = '2019';
+        selectedWeather = 'all';
+        selectedIllumination = 'all';
+        selectedHitRun = 'all';
+      } else if (index === 2) {
+        selectedYear = '2020';
+        selectedWeather = 'all';
+        selectedIllumination = 'all';
+        selectedHitRun = 'all';
+      } else if (index === 3) {
+        selectedYear = '2021';
+        selectedWeather = 'all';
+        selectedIllumination = 'all';
+        selectedHitRun = 'all';
+      } else if (index === 4) {
+        selectedYear = '2022';
+        selectedWeather = 'all';
+        selectedIllumination = 'all';
+        selectedHitRun = 'all';
+      } else if (index === 5) {
+        selectedYear = '2023';
+        selectedWeather = 'all';
+        selectedIllumination = 'all';
+        selectedHitRun = 'all';
+      } else if (index === 6) {
+        selectedYear = '2024';
+        selectedWeather = 'all';
+        selectedIllumination = 'all';
+        selectedHitRun = 'all';
+      } else {
+        selectedYear = '2025';
+        selectedWeather = 'all';
+        selectedIllumination = 'all';
+        selectedHitRun = 'all';
+      }
+      updateFilters();
+      window.addEventListener('resize', scroller.resize);
+    });
+
   updateFilters();
 });
+
