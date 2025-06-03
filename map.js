@@ -18,9 +18,6 @@ let selectedWeather = 'all';
 let selectedHitRun = 'all';
 let selectedIllumination = 'all';
 
-// Flag to detect when the user has scrolled for the first time
-let hasScrolledYet = false;
-
 const timeSlider = document.getElementById('time-slider');
 const selectedTime = document.getElementById('selected-time');
 const anyTimeLabel = document.getElementById('any-time');
@@ -63,7 +60,7 @@ function filterFeatures(features, year, timeFilter, weather, hitRun, illuminatio
     // Year filter
     const yearMatch = year === 'all' || extractYear(dt) === parseInt(year);
 
-    // Time filter: ±60 minutes around the chosen slider value
+    // Time filter: allow ±60 minutes around the chosen slider value
     const mins = minutesSinceMidnight(dt);
     const timeMatch = timeFilter === -1 || (mins !== null && Math.abs(mins - timeFilter) <= 60);
 
@@ -221,48 +218,41 @@ map.on('load', async () => {
       offset: 0.5,
       debug: false,
     })
-    .onStepEnter(({ element, index, direction }) => {
-      // If the user hasn't scrolled yet, skip the initial trigger
-      if (!hasScrolledYet) {
-        if (window.scrollY > 0) {
-          // First actual scroll event: set year to 2018
-          hasScrolledYet = true;
-          selectedYear = '2018';
-        } else {
-          // Still at top of page—ignore this trigger
-          return;
-        }
+    .onStepEnter(({ element, index }) => {
+      // Highlight the active step
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('is-active'));
+      element.classList.add('is-active');
+
+      // Determine year based on scroll index
+      if (index === 0) {
+        selectedYear = 'all';
+      } else if (index === 1) {
+        selectedYear = '2018';
+      } else if (index === 2) {
+        selectedYear = '2019';
+      } else if (index === 3) {
+        selectedYear = '2020';
+      } else if (index === 4) {
+        selectedYear = '2021';
+      } else if (index === 5) {
+        selectedYear = '2022';
+      } else if (index === 6) {
+        selectedYear = '2023';
+      } else if (index === 7) {
+        selectedYear = '2024';
       } else {
-        // After the first scroll, use normal year‐by‐index logic
-        if (index === 0) {
-          selectedYear = '2018';
-        } else if (index === 1) {
-          selectedYear = '2019';
-        } else if (index === 2) {
-          selectedYear = '2020';
-        } else if (index === 3) {
-          selectedYear = '2021';
-        } else if (index === 4) {
-          selectedYear = '2022';
-        } else if (index === 5) {
-          selectedYear = '2023';
-        } else if (index === 6) {
-          selectedYear = '2024';
-        } else {
-          selectedYear = '2025';
-        }
+        selectedYear = '2025';
       }
 
-      // Sync the year dropdown with the newly chosen year
       yearDropDown.value = selectedYear;
 
-      // Re-draw the map with the updated year filter
+      // Re-draw the map with updated filters
       updateFilters();
 
       // Re-calc positions if window resizes
       window.addEventListener('resize', scroller.resize);
     });
 
-  // Initial draw (shows all years until the user scrolls)
+  // Initial draw (all filters set to “all”)
   updateFilters();
 });
