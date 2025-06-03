@@ -242,16 +242,7 @@ map.on('load', async () => {
         selectedYear = '2025';
       }
 
-      // Reset other filters to “all” on each new scroll step
-      selectedWeather = 'all';
-      selectedHitRun = 'all';
-      selectedIllumination = 'all';
-
-      // Sync UI dropdowns with internal variables
       yearDropDown.value = selectedYear;
-      weatherSelect.value = selectedWeather;
-      hitrunSelect.value = selectedHitRun;
-      illumSelect.value = selectedIllumination;
 
       // Re-draw the map with updated filters
       updateFilters();
