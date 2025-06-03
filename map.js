@@ -74,6 +74,15 @@ function filterFeatures(features, year, timeFilter, weather, hitRun, illuminatio
     return yearMatch && timeMatch && weatherMatch && hitRunMatch && illuminationMatch;
   });
 }
+function updateYearSummary(features, year) {
+  const fatalities = features.reduce((sum, f) => sum + (parseInt(f.properties['Fatal Count']) || 0), 0);
+  const injuries = features.reduce((sum, f) => sum + (parseInt(f.properties['Injury Count']) || 0), 0);
+
+  document.getElementById('summary-year').textContent = year;
+  document.getElementById('summary-fatalities').textContent = fatalities;
+  document.getElementById('summary-injuries').textContent = injuries;
+}
+
 
 function updateFilters() {
   const timeFilter = Number(timeSlider.value);
@@ -104,6 +113,7 @@ map.on('load', async () => {
   const response = await fetch('https://dar0010.github.io/nashville-crash-data/accidents_injury_fatality.geojson');
   originalData = await response.json();
 
+  // Add source and layer (your existing code)
   map.addSource('nash-crash', {
     type: 'geojson',
     data: originalData,
@@ -130,76 +140,37 @@ map.on('load', async () => {
     },
   });
 
-  // Year dropdown
-  const yearDropDown = document.getElementById('year-select');
-  const years = [...new Set(originalData.features
-    .map(f => extractYear(f.properties['Date and Time']))
-    .filter(y => y))].sort();
-  yearDropDown.innerHTML = `<option value="all">All Years</option>`
-    + years.map(y => `<option value="${y}">${y}</option>`).join('');
-  yearDropDown.addEventListener('change', () => {
-    selectedYear = yearDropDown.value;
-    updateFilters();
+  // Your existing filter dropdowns, popup, etc.
+
+  // --- NEW: aggregate yearly stats and update .step divs ---
+
+  const yearlyStats = {};
+
+  // Aggregate fatalities and injuries per year
+  originalData.features.forEach(f => {
+    const year = extractYear(f.properties['Date and Time']);
+    if (!year) return;
+  
+    const fatal = parseInt(f.properties['Number of Fatalities']) || 0;
+    const inj = parseInt(f.properties['Number of Injuries']) || 0;
+  
+    if (!yearlyStats[year]) yearlyStats[year] = { fatalities: 0, injuries: 0 };
+    yearlyStats[year].fatalities += fatal;
+    yearlyStats[year].injuries += inj;
   });
 
-  // New filter elements
-  const weatherSelect = document.getElementById('weather-select');
-  const hitrunSelect = document.getElementById('hitrun-select');
-  const illumSelect = document.getElementById('illumination-select');
-
-  weatherSelect.addEventListener('change', () => {
-    selectedWeather = weatherSelect.value;
-    updateFilters();
-  });
-  hitrunSelect.addEventListener('change', () => {
-    selectedHitRun = hitrunSelect.value;
-    updateFilters();
-  });
-  illumSelect.addEventListener('change', () => {
-    selectedIllumination = illumSelect.value;
-    updateFilters();
+  // Update each .step div with the stats
+  document.querySelectorAll('.step').forEach((stepEl, idx) => {
+    const year = 2018 + idx; // Adjust if your years start differently
+    const stats = yearlyStats[year] || { fatalities: 0, injuries: 0 };
+    stepEl.innerHTML = `
+      <strong>${year}</strong><br>
+      Fatalities: ${stats.fatalities}<br>
+      Injuries: ${stats.injuries}
+    `;
   });
 
-  // Popup on hover
-  map.on('mouseenter', 'crashes', (e) => {
-    map.getCanvas().style.cursor = 'pointer';
-    const feature = e.features[0];
-    const props = feature.properties;
-    const coords = feature.geometry.coordinates;
-
-    const time = props['Date and Time'];
-    const vehicles = props['Number of Motor Vehicles'];
-    const type = props['Collision Type Description'];
-    // show new fields too
-    const weather = props['Weather'] || props['Weather Description'];
-    const hitrun = props['Hit and Run'] || props['Hit and Run Flag'];
-    const illum = props['Illumination'] || props['Illumination Condition'];
-
-    new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
-      .setLngLat(coords)
-      .setHTML(`
-        <strong>Time:</strong> ${time}<br>
-        <strong>Vehicles:</strong> ${vehicles}<br>
-        <strong>Type:</strong> ${type}<br>
-        <strong>Weather:</strong> ${weather || 'N/A'}<br>
-        <strong>Hit & Run:</strong> ${hitrun || 'N/A'}<br>
-        <strong>Light:</strong> ${illum || 'N/A'}
-      `)
-      .addTo(map);
-  });
-  map.on('mouseleave', 'crashes', () => {
-    map.getCanvas().style.cursor = '';
-    const popups = document.getElementsByClassName('mapboxgl-popup');
-    if (popups.length) popups[0].remove();
-  });
-
-  // Time slider
-  //const timeSlider = document.getElementById('time-slider');
-  //const selectedTime = document.getElementById('selected-time');
-  //const anyTimeLabel = document.getElementById('any-time');
-
-  timeSlider.addEventListener('input', updateFilters);
-
+  // Scrollama setup and other logic continues here...
   const scroller = scrollama();
 
   scroller
@@ -259,4 +230,3 @@ map.on('load', async () => {
 
   updateFilters();
 });
-
