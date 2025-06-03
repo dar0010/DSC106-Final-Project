@@ -22,6 +22,10 @@ const timeSlider = document.getElementById('time-slider');
 const selectedTime = document.getElementById('selected-time');
 const anyTimeLabel = document.getElementById('any-time');
 
+const yearDropDown = document.getElementById('year-select');
+const weatherSelect = document.getElementById('weather-select');
+const hitrunSelect = document.getElementById('hitrun-select');
+const illumSelect = document.getElementById('illumination-select');
 
 function extractYear(dateTimeStr) {
   const datePart = dateTimeStr?.split(' ')[0];
@@ -47,27 +51,28 @@ function formatTime(minutes) {
   return `${displayHr}:${mins.toString().padStart(2, '0')} ${ampm}`;
 }
 
-// Now takes weather, hitRun, illumination filters
 function filterFeatures(features, year, timeFilter, weather, hitRun, illumination) {
   return features.filter((feature) => {
     const props = feature.properties;
     const dt = props['Date and Time'];
     if (!dt) return false;
 
-    // year & time
+    // Year filter
     const yearMatch = year === 'all' || extractYear(dt) === parseInt(year);
+
+    // Time filter: allow ±60 minutes around the chosen slider value
     const mins = minutesSinceMidnight(dt);
     const timeMatch = timeFilter === -1 || (mins !== null && Math.abs(mins - timeFilter) <= 60);
 
-    // weather
+    // Weather filter (uppercase compare)
     const weatherVal = props['Weather'] || props['Weather Description'] || '';
     const weatherMatch = weather === 'all' || weatherVal.toUpperCase() === weather;
 
-    // hit and run
+    // Hit-and-Run filter (uppercase compare)
     const hrVal = (props['Hit and Run'] || props['Hit and Run Flag'] || '').toUpperCase();
     const hitRunMatch = hitRun === 'all' || hrVal === hitRun;
 
-    // illumination
+    // Illumination filter (uppercase compare)
     const illumVal = props['Illumination'] || props['Illumination Condition'] || '';
     const illuminationMatch = illumination === 'all' || illumVal.toUpperCase() === illumination;
 
@@ -101,14 +106,19 @@ function updateFilters() {
 }
 
 map.on('load', async () => {
-  const response = await fetch('https://dar0010.github.io/nashville-crash-data/accidents_injury_fatality.geojson');
+  // Fetch and store the GeoJSON
+  const response = await fetch(
+    'https://dar0010.github.io/nashville-crash-data/accidents_injury_fatality.geojson'
+  );
   originalData = await response.json();
 
+  // Add GeoJSON source
   map.addSource('nash-crash', {
     type: 'geojson',
     data: originalData,
   });
 
+  // Add circle layer
   map.addLayer({
     id: 'crashes',
     type: 'circle',
@@ -130,37 +140,41 @@ map.on('load', async () => {
     },
   });
 
-  // Year dropdown
-  const yearDropDown = document.getElementById('year-select');
-  const years = [...new Set(originalData.features
-    .map(f => extractYear(f.properties['Date and Time']))
-    .filter(y => y))].sort();
-  yearDropDown.innerHTML = `<option value="all">All Years</option>`
-    + years.map(y => `<option value="${y}">${y}</option>`).join('');
+  // Populate the year dropdown with all distinct years
+  const years = [
+    ...new Set(
+      originalData.features
+        .map(f => extractYear(f.properties['Date and Time']))
+        .filter(y => y)
+    )
+  ].sort();
+  yearDropDown.innerHTML = `
+    <option value="all">All Years</option>
+    ${years.map(y => `<option value="${y}">${y}</option>`).join('')}
+  `;
+
+  // Attach event listeners for filter controls
   yearDropDown.addEventListener('change', () => {
     selectedYear = yearDropDown.value;
     updateFilters();
   });
 
-  // New filter elements
-  const weatherSelect = document.getElementById('weather-select');
-  const hitrunSelect = document.getElementById('hitrun-select');
-  const illumSelect = document.getElementById('illumination-select');
-
   weatherSelect.addEventListener('change', () => {
     selectedWeather = weatherSelect.value;
     updateFilters();
   });
+
   hitrunSelect.addEventListener('change', () => {
     selectedHitRun = hitrunSelect.value;
     updateFilters();
   });
+
   illumSelect.addEventListener('change', () => {
     selectedIllumination = illumSelect.value;
     updateFilters();
   });
 
-  // Popup on hover
+  // Popup on hover for each crash circle
   map.on('mouseenter', 'crashes', (e) => {
     map.getCanvas().style.cursor = 'pointer';
     const feature = e.features[0];
@@ -170,7 +184,6 @@ map.on('load', async () => {
     const time = props['Date and Time'];
     const vehicles = props['Number of Motor Vehicles'];
     const type = props['Collision Type Description'];
-    // show new fields too
     const weather = props['Weather'] || props['Weather Description'];
     const hitrun = props['Hit and Run'] || props['Hit and Run Flag'];
     const illum = props['Illumination'] || props['Illumination Condition'];
@@ -187,76 +200,66 @@ map.on('load', async () => {
       `)
       .addTo(map);
   });
+
   map.on('mouseleave', 'crashes', () => {
     map.getCanvas().style.cursor = '';
     const popups = document.getElementsByClassName('mapboxgl-popup');
     if (popups.length) popups[0].remove();
   });
 
-  // Time slider
-  //const timeSlider = document.getElementById('time-slider');
-  //const selectedTime = document.getElementById('selected-time');
-  //const anyTimeLabel = document.getElementById('any-time');
-
+  // Time slider input listener
   timeSlider.addEventListener('input', updateFilters);
 
+  // Scrollama setup
   const scroller = scrollama();
-
   scroller
     .setup({
       step: '.step',
       offset: 0.5,
       debug: false,
     })
-    .onStepEnter(({element, index}) => {
+    .onStepEnter(({ element, index }) => {
+      // Highlight the active step
       document.querySelectorAll('.step').forEach(s => s.classList.remove('is-active'));
       element.classList.add('is-active');
 
+      // Determine year based on scroll index
       if (index === 0) {
         selectedYear = '2018';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
       } else if (index === 1) {
         selectedYear = '2019';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
       } else if (index === 2) {
         selectedYear = '2020';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
       } else if (index === 3) {
         selectedYear = '2021';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
       } else if (index === 4) {
         selectedYear = '2022';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
       } else if (index === 5) {
         selectedYear = '2023';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
       } else if (index === 6) {
         selectedYear = '2024';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
       } else {
         selectedYear = '2025';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
       }
+
+      // Reset other filters to “all” on each new scroll step
+      selectedWeather = 'all';
+      selectedHitRun = 'all';
+      selectedIllumination = 'all';
+
+      // Sync UI dropdowns with internal variables
+      yearDropDown.value = selectedYear;
+      weatherSelect.value = selectedWeather;
+      hitrunSelect.value = selectedHitRun;
+      illumSelect.value = selectedIllumination;
+
+      // Re-draw the map with updated filters
       updateFilters();
+
+      // Re-calc positions if window resizes
       window.addEventListener('resize', scroller.resize);
     });
 
+  // Initial draw (all filters set to “all”)
   updateFilters();
 });
-
