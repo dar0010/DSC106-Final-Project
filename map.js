@@ -11,16 +11,20 @@ const map = new mapboxgl.Map({
   minZoom: 5,
   maxZoom: 18,
 });
-
-let originalData;
+let data;
+let totalData;
+let injuryFatalityData;
 let selectedYear = 'all';
 let selectedWeather = 'all';
 let selectedHitRun = 'all';
 let selectedIllumination = 'all';
+let selectedDataset = 'total-accidents';
 
 const timeSlider = document.getElementById('time-slider');
 const selectedTime = document.getElementById('selected-time');
 const anyTimeLabel = document.getElementById('any-time');
+const dataDropDown = document.getElementById('dataset-select');
+console.log(dataDropDown);
 
 const yearDropDown = document.getElementById('year-select');
 const weatherSelect = document.getElementById('weather-select');
@@ -90,42 +94,85 @@ function updateFilters() {
     anyTimeLabel.style.display = 'none';
   }
 
+  if (selectedDataset === 'injury-fatality') {
+    map.setLayoutProperty('total-accidents', 'visibility', 'none');
+    map.setLayoutProperty('injury-fatality', 'visibility', 'visible');
+    data = injuryFatalityData;
+  } else {
+    map.setLayoutProperty('total-accidents', 'visibility', 'visible');
+    map.setLayoutProperty('injury-fatality', 'visibility', 'none');
+    data = totalData;
+  }
+  
   const filtered = filterFeatures(
-    originalData.features,
+    data.features,
     selectedYear,
     timeFilter,
     selectedWeather,
     selectedHitRun,
     selectedIllumination
   );
-
-  map.getSource('nash-crash').setData({
+  const sourceName = selectedDataset;
+  map.getSource(sourceName).setData({
     type: 'FeatureCollection',
     features: filtered,
   });
+  
 }
 
 map.on('load', async () => {
   // Fetch and store the GeoJSON
-  const response = await fetch(
+  const response_injury = await fetch(
     'https://dar0010.github.io/nashville-crash-data/accidents_injury_fatality.geojson'
   );
-  originalData = await response.json();
+  const response_total = await fetch(
+    'https://dar0010.github.io/nashville-crash-data/accidents.geojson'
+  )
+  injuryFatalityData = await response_injury.json();
+  totalData = await response_total.json();
+
 
   // Add GeoJSON source
-  map.addSource('nash-crash', {
+  map.addSource('total-accidents', {
     type: 'geojson',
-    data: originalData,
+    data: totalData,
+  });
+
+  map.addSource('injury-fatality', {
+    type: 'geojson',
+    data: injuryFatalityData,
   });
 
   // Add circle layer
   map.addLayer({
-    id: 'crashes',
+    id: 'total-accidents',
     type: 'circle',
-    source: 'nash-crash',
+    source: 'total-accidents',
     paint: {
       'circle-color': 'red',
-      'circle-opacity': 0.3,
+      'circle-opacity': 0.25,
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['get', 'Number of Motor Vehicles'],
+        1, 4,
+        2, 6,
+        3, 8,
+        4, 10,
+        5, 12,
+        6, 14
+      ]
+    },
+  });
+
+  map.addLayer({
+    id: 'injury-fatality',
+    type: 'circle',
+    source: 'injury-fatality',
+    layout: {visibility: 'none'},
+    paint: {
+      'circle-color': 'red',
+      'circle-opacity': 0.25,
       'circle-radius': [
         'interpolate',
         ['linear'],
@@ -143,7 +190,7 @@ map.on('load', async () => {
   // Populate the year dropdown with all distinct years
   const years = [
     ...new Set(
-      originalData.features
+      totalData.features
         .map(f => extractYear(f.properties['Date and Time']))
         .filter(y => y)
     )
@@ -174,41 +221,82 @@ map.on('load', async () => {
     updateFilters();
   });
 
+  dataDropDown.addEventListener('change', () => {
+    selectedDataset = dataDropDown.value;
+    console.log(selectedDataset);
+    updateFilters();
+  });
+
   // Popup on hover for each crash circle
-  map.on('mouseenter', 'crashes', (e) => {
-    map.getCanvas().style.cursor = 'pointer';
-    const feature = e.features[0];
-    const props = feature.properties;
-    const coords = feature.geometry.coordinates;
+  ['total-accidents', 'injury-fatality'].forEach(layerId => {
+    map.on('mouseenter', layerId, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+      const feature = e.features[0];
+      const props = feature.properties;
+      const coords = feature.geometry.coordinates;
 
-    const time = props['Date and Time'];
-    const vehicles = props['Number of Motor Vehicles'];
-    const type = props['Collision Type Description'];
-    const weather = props['Weather'] || props['Weather Description'];
-    const hitrun = props['Hit and Run'] || props['Hit and Run Flag'];
-    const illum = props['Illumination'] || props['Illumination Condition'];
+      const time = props['Date and Time'];
+      const vehicles = props['Number of Motor Vehicles'];
+      const type = props['Collision Type Description'];
+      const weather = props['Weather'] || props['Weather Description'];
+      const hitrun = props['Hit and Run'] || props['Hit and Run Flag'];
+      const illum = props['Illumination'] || props['Illumination Condition'];
 
-    new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
-      .setLngLat(coords)
-      .setHTML(`
-        <strong>Time:</strong> ${time}<br>
-        <strong>Vehicles:</strong> ${vehicles}<br>
-        <strong>Type:</strong> ${type}<br>
-        <strong>Weather:</strong> ${weather || 'N/A'}<br>
-        <strong>Hit & Run:</strong> ${hitrun || 'N/A'}<br>
-        <strong>Light:</strong> ${illum || 'N/A'}
-      `)
-      .addTo(map);
+      new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
+        .setLngLat(coords)
+        .setHTML(`
+          <strong>Time:</strong> ${time}<br>
+          <strong>Vehicles:</strong> ${vehicles}<br>
+          <strong>Type:</strong> ${type}<br>
+          <strong>Weather:</strong> ${weather || 'N/A'}<br>
+          <strong>Hit & Run:</strong> ${hitrun || 'N/A'}<br>
+          <strong>Light:</strong> ${illum || 'N/A'}
+        `)
+        .addTo(map);
+    });
+
+    map.on('mouseleave', layerId, () => {
+      map.getCanvas().style.cursor = '';
+      const popups = document.getElementsByClassName('mapboxgl-popup');
+      if (popups.length) popups[0].remove();
+    });
   });
 
-  map.on('mouseleave', 'crashes', () => {
-    map.getCanvas().style.cursor = '';
-    const popups = document.getElementsByClassName('mapboxgl-popup');
-    if (popups.length) popups[0].remove();
-  });
+  // map.on('mouseenter', 'crashes', (e) => {
+  //   map.getCanvas().style.cursor = 'pointer';
+  //   const feature = e.features[0];
+  //   const props = feature.properties;
+  //   const coords = feature.geometry.coordinates;
+
+  //   const time = props['Date and Time'];
+  //   const vehicles = props['Number of Motor Vehicles'];
+  //   const type = props['Collision Type Description'];
+  //   const weather = props['Weather'] || props['Weather Description'];
+  //   const hitrun = props['Hit and Run'] || props['Hit and Run Flag'];
+  //   const illum = props['Illumination'] || props['Illumination Condition'];
+
+  //   new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
+  //     .setLngLat(coords)
+  //     .setHTML(`
+  //       <strong>Time:</strong> ${time}<br>
+  //       <strong>Vehicles:</strong> ${vehicles}<br>
+  //       <strong>Type:</strong> ${type}<br>
+  //       <strong>Weather:</strong> ${weather || 'N/A'}<br>
+  //       <strong>Hit & Run:</strong> ${hitrun || 'N/A'}<br>
+  //       <strong>Light:</strong> ${illum || 'N/A'}
+  //     `)
+  //     .addTo(map);
+  // });
+
+  // map.on('mouseleave', 'crashes', () => {
+  //   map.getCanvas().style.cursor = '';
+  //   const popups = document.getElementsByClassName('mapboxgl-popup');
+  //   if (popups.length) popups[0].remove();
+  // });
 
   // Time slider input listener
   timeSlider.addEventListener('input', updateFilters);
+
 
   // Scrollama setup
   const scroller = scrollama();
