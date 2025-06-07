@@ -24,7 +24,6 @@ const timeSlider = document.getElementById('time-slider');
 const selectedTime = document.getElementById('selected-time');
 const anyTimeLabel = document.getElementById('any-time');
 const dataDropDown = document.getElementById('dataset-select');
-console.log(dataDropDown);
 
 const yearDropDown = document.getElementById('year-select');
 const weatherSelect = document.getElementById('weather-select');
@@ -77,8 +76,10 @@ function filterFeatures(features, year, timeFilter, weather, hitRun, illuminatio
     const hitRunMatch = hitRun === 'all' || hrVal === hitRun;
 
     // Illumination filter (uppercase compare)
-    const illumVal = props['Illumination'] || props['Illumination Condition'] || '';
-    const illuminationMatch = illumination === 'all' || illumVal.toUpperCase() === illumination;
+    const illumVal = props['Illumination Description'];
+    const illuminationMatch =
+      selectedIllumination === 'all' ||
+      (illumVal && illumVal.toUpperCase().trim() === selectedIllumination.toUpperCase().trim());
 
     return yearMatch && timeMatch && weatherMatch && hitRunMatch && illuminationMatch;
   });
@@ -343,4 +344,5 @@ map.on('load', async () => {
 
   // Initial draw (all filters set to “all”)
   updateFilters();
+  console.log(data);
 });
