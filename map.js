@@ -314,22 +314,31 @@ map.on('load', async () => {
 
       // Determine year based on scroll index
       if (index === 0) {
+        selectedDataset = 'total-accidents'; // show all data and talk about how its not showing much
         selectedYear = 'all';
       } else if (index === 1) {
+        selectedDataset = 'injury-fatality'; // filter down to the injuries and fatalities and talk about how its much more infromative
         selectedYear = '2018';
       } else if (index === 2) {
+        selectedDataset = 'injury-fatality'; // we don't necessarily need to show all years unless we want to show that the pattern in the data is steady
         selectedYear = '2019';
       } else if (index === 3) {
+        selectedDataset = 'injury-fatality'; // one i found: dark-not lighted over the years shows accidents happen in same sort of areas. look near colewood acres in the south east, westmead in the southwest, and exiting the airport heading east
         selectedYear = '2020';
       } else if (index === 4) {
+        selectedDataset = 'injury-fatality'; // we also wanted to do the thing where we would count the number of injuries and fatalities over the years
         selectedYear = '2021';
       } else if (index === 5) {
+        selectedDataset = 'injury-fatality';
         selectedYear = '2022';
       } else if (index === 6) {
+        selectedDataset = 'injury-fatality';
         selectedYear = '2023';
       } else if (index === 7) {
+        selectedDataset = 'injury-fatality';
         selectedYear = '2024';
       } else {
+        selectedDataset = 'injury-fatality';
         selectedYear = '2025';
       }
 
