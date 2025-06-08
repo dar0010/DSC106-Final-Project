@@ -6,65 +6,71 @@
   <title>Nashville Crash Data 🚗</title>
   <link href="global.css" rel="stylesheet" />
   <script type="module" src="map.js" defer></script>
+  <script type="module" src="dots.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/dist/mapbox-gl.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/dist/mapbox-gl.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <header style="display: flex; gap: 1em; align-items: baseline;">
-    <h1>Crashville 🚗</h1>
+  <header class="filter-bar">
+    <h1 class="site-title">Crashville 🚗</h1>
 
-    <label style="margin-left: auto;">
-      Filter by time:
-      <input
-        type="range"
-        id="time-slider"
-        min="-1"
-        max="1439"
-        value="-1"
-        step="1"
-        style="vertical-align: middle;"
-      />
-      <time id="selected-time" style="display: block; font-weight: bold;"></time>
-      <em id="any-time" style="display: block; color: #666; font-style: italic;">
-        (any time)
-      </em>
-    </label>
+    <div class="filter-group">
+      <label for="dataset-select">Choose dataset:</label>
+      <select id="dataset-select">
+        <option value="total-accidents">Total accidents</option>
+        <option value="injury-fatality">Injuries & fatalities</option>
+      </select>
+    </div>
 
-    <label for="year-select">Filter by year:</label>
-    <select id="year-select">
-      <option>Loading...</option>
-    </select>
+    <div class="filter-group">
+      <label for="year-select">Filter by year:</label>
+      <select id="year-select"><option>Loading...</option></select>
+    </div>
 
-    <!-- New filters -->
-    <label for="weather-select">Filter by weather:</label>
-    <select id="weather-select">
-      <option value="all">All</option>
-      <option value="CLEAR">Clear</option>
-      <option value="CLOUDY">Cloudy</option>
-      <option value="RAIN">Rain</option>
-      <option value="SNOW">Snow</option>
-      <option value="UNKNOWN">Unknown</option>
-    </select>
+    <div class="filter-group">
+      <label for="weather-select">Filter by weather:</label>
+      <select id="weather-select">
+        <option value="all">All</option>
+        <option value="CLEAR">Clear</option>
+        <option value="CLOUDY">Cloudy</option>
+        <option value="RAIN">Rain</option>
+        <option value="SNOW">Snow</option>
+        <option value="UNKNOWN">Unknown</option>
+      </select>
+    </div>
 
-    <label for="hitrun-select">Filter by hit-and-run:</label>
-    <select id="hitrun-select">
-      <option value="all">All</option>
-      <option value="Y">Yes</option>
-      <option value="N">No</option>
-    </select>
+    <div class="filter-group">
+      <label for="hitrun-select">Filter by hit‑run:</label>
+      <select id="hitrun-select">
+        <option value="all">All</option>
+        <option value="Y">Yes</option>
+        <option value="N">No</option>
+      </select>
+    </div>
 
-    <label for="illumination-select">Filter by illumination:</label>
-    <select id="illumination-select">
-      <option value="all">All</option>
-      <option value="DAYLIGHT">Daylight</option>
-      <option value="DARK - LIGHTED">Dark – Lighted</option>
-      <option value="DARK - NOT LIGHTED">Dark – Not Lighted</option>
-      <option value="DUSK">Dusk</option>
-      <option value="UNKNOWN">Unknown</option>
-    </select>
-    <!-- end new filters -->
+    <div class="filter-group">
+      <label for="illumination-select">Filter by illumination:</label>
+      <select id="illumination-select">
+        <option value="all">All</option>
+        <option value="DAYLIGHT">Daylight</option>
+        <option value="DARK - LIGHTED">Dark – Lighted</option>
+        <option value="DARK - NOT LIGHTED">Dark – Not Lighted</option>
+        <option value="DUSK">Dusk</option>
+        <option value="UNKNOWN">Unknown</option>
+      </select>
+    </div>
 
+    <div class="filter-group" style="margin-left:auto;">
+      <label for="time-slider">Filter by time:</label>
+      <input type="range" id="time-slider" min="-1" max="1439" value="-1" step="1" />
+      <div class="time-display">
+        <time id="selected-time"></time>
+        <span id="any-time">(any time)</span>
+      </div>
+    </div>
   </header>
+
   <div id="scrolly">
     <div id="map-story">
       <div class="step" data-step="0">all filler text</div>
@@ -79,14 +85,15 @@
     </div>  
     <div id="map"></div>
   </div>
-  <div>
-    <h2> Write up:</h2>
+
+  <div class="writeup">
+    <h2>Write up:</h2>
     <p>
-      So far we have converted our crash data into a geojson and plotted on a map of Nashville. Then we added some basic interaction
-      elements like time of crash and information about each crash once you click on the circle. After that we decided to change the size 
-      of each individual circle based on the number of vechicles involved in the accident. Finally we added some more features like year, weather, if it was a hit and run, and amount of illumination to so that the visualization wouldn't look so cluttered.
+      So far we have converted our crash data into GeoJSON and plotted it on a map of Nashville. We've added time‐based filters, click popups, and variable circle sizes based on number of vehicles involved. We now offer filters for year, weather, hit/run events, lighting, and an optional view focused on injuries and fatalities to highlight the most severe incidents.
     </p>
-    <p> The most difficult thing to implement is how to create different kinds of interactions for new filters that we plan to implement. So far we only have one slider and the rest are just regular drop down menus. Another difficult thing to implement is the overall design of our website. Currently everything looks basic and we need to so some research and find some inspiration to improve our website's design.</p>
+    <p>
+      Implementing the different datasets and making the scroll narration sync with the injury/fatality view was the biggest challenge. We're excited to explore adding dot animations to represent death/injury counts further in our next update.
+    </p>
   </div>
 </body>
 </html>
