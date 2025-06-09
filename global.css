@@ -191,16 +191,16 @@ header {
   min-height: 2.5em; 
 }
 
+/* ==== SUMMARY STATS (VERTICAL) ==== */
 .step-summary {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid #eee;
   display: flex;
-  gap: 1.5rem;
-  justify-content: space-around;
-  text-align: center;
+  flex-direction: column; /* Switched to column for vertical layout */
+  gap: 1.5rem;           /* Spacing between each stat */
+  align-items: flex-start; /* Align to the left; change to center if preferred */
 }
-
 
 .stat-item {
   display: flex;
@@ -221,7 +221,6 @@ header {
   letter-spacing: 0.5px;
   margin-top: 0.25rem;
 }
-
 
 #map {
   flex: 1;
@@ -280,7 +279,7 @@ header {
     margin-left: 0;
     margin-top: 1rem;
   }
-} 
+}
 
 @keyframes fadeInDot {
   from { opacity: 0; transform: scale(0.5); }
