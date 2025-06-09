@@ -19,6 +19,7 @@ let selectedYear = 'all';
 let selectedWeather = 'all';
 let selectedHitRun = 'all';
 let selectedIllumination = 'all';
+let selectedDataset = 'total-accidents';
 
 const timeSlider = document.getElementById('time-slider');
 const selectedTime = document.getElementById('selected-time');
@@ -85,6 +86,7 @@ function updateFilters() {
     type: 'FeatureCollection',
     features: filtered,
   });
+  
 }
 
 map.on('load', async () => {
@@ -106,7 +108,22 @@ map.on('load', async () => {
     source: 'nash-crash',
     paint: {
       'circle-color': 'red',
-      'circle-opacity': 0.3,
+      'circle-opacity': 0.25,
+      'circle-radius': [
+        'interpolate', ['linear'], ['get', 'Number of Motor Vehicles'],
+        1, 4, 2, 6, 3, 8, 4, 10, 5, 12, 6, 14
+      ]
+    },
+  });
+
+  map.addLayer({
+    id: 'injury-fatality',
+    type: 'circle',
+    source: 'injury-fatality',
+    layout: {visibility: 'none'},
+    paint: {
+      'circle-color': 'red',
+      'circle-opacity': 0.25,
       'circle-radius': [
         'interpolate', ['linear'], ['get', 'Number of Motor Vehicles'],
         1, 4, 2, 6, 3, 8, 4, 10, 5, 12, 6, 14
@@ -141,11 +158,44 @@ map.on('load', async () => {
       .addTo(map);
   });
 
-  map.on('mouseleave', 'crashes', () => {
-    map.getCanvas().style.cursor = '';
-    const popups = document.getElementsByClassName('mapboxgl-popup');
-    if (popups.length) popups[0].remove();
+    map.on('mouseleave', layerId, () => {
+      map.getCanvas().style.cursor = '';
+      const popups = document.getElementsByClassName('mapboxgl-popup');
+      if (popups.length) popups[0].remove();
+    });
   });
+
+  // map.on('mouseenter', 'crashes', (e) => {
+  //   map.getCanvas().style.cursor = 'pointer';
+  //   const feature = e.features[0];
+  //   const props = feature.properties;
+  //   const coords = feature.geometry.coordinates;
+
+  //   const time = props['Date and Time'];
+  //   const vehicles = props['Number of Motor Vehicles'];
+  //   const type = props['Collision Type Description'];
+  //   const weather = props['Weather'] || props['Weather Description'];
+  //   const hitrun = props['Hit and Run'] || props['Hit and Run Flag'];
+  //   const illum = props['Illumination'] || props['Illumination Condition'];
+
+  //   new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
+  //     .setLngLat(coords)
+  //     .setHTML(`
+  //       <strong>Time:</strong> ${time}<br>
+  //       <strong>Vehicles:</strong> ${vehicles}<br>
+  //       <strong>Type:</strong> ${type}<br>
+  //       <strong>Weather:</strong> ${weather || 'N/A'}<br>
+  //       <strong>Hit & Run:</strong> ${hitrun || 'N/A'}<br>
+  //       <strong>Light:</strong> ${illum || 'N/A'}
+  //     `)
+  //     .addTo(map);
+  // });
+
+  // map.on('mouseleave', 'crashes', () => {
+  //   map.getCanvas().style.cursor = '';
+  //   const popups = document.getElementsByClassName('mapboxgl-popup');
+  //   if (popups.length) popups[0].remove();
+  // });
 
   const scroller = scrollama();
   scroller.setup({ step: '.step', offset: 0.5, debug: false })
@@ -161,4 +211,5 @@ map.on('load', async () => {
     });
 
   updateFilters();
+  console.log(data);
 });
