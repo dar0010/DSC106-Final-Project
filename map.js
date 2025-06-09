@@ -12,16 +12,23 @@ const map = new mapboxgl.Map({
   maxZoom: 18,
 });
 
-let originalData;
+let totalData;
+let injuryFatalityData;
+let selectedDataset = 'total-accidents';
 let selectedYear = 'all';
 let selectedWeather = 'all';
 let selectedHitRun = 'all';
 let selectedIllumination = 'all';
+let selectedDataset = 'total-accidents';
 
 const timeSlider = document.getElementById('time-slider');
 const selectedTime = document.getElementById('selected-time');
 const anyTimeLabel = document.getElementById('any-time');
-
+const datasetSelect = document.getElementById('dataset-select');
+const yearDropDown = document.getElementById('year-select');
+const weatherSelect = document.getElementById('weather-select');
+const hitrunSelect = document.getElementById('hitrun-select');
+const illumSelect = document.getElementById('illumination-select');
 
 function extractYear(dateTimeStr) {
   const datePart = dateTimeStr?.split(' ')[0];
@@ -47,29 +54,21 @@ function formatTime(minutes) {
   return `${displayHr}:${mins.toString().padStart(2, '0')} ${ampm}`;
 }
 
-// Now takes weather, hitRun, illumination filters
 function filterFeatures(features, year, timeFilter, weather, hitRun, illumination) {
   return features.filter((feature) => {
     const props = feature.properties;
     const dt = props['Date and Time'];
     if (!dt) return false;
 
-    // year & time
     const yearMatch = year === 'all' || extractYear(dt) === parseInt(year);
     const mins = minutesSinceMidnight(dt);
     const timeMatch = timeFilter === -1 || (mins !== null && Math.abs(mins - timeFilter) <= 60);
-
-    // weather
     const weatherVal = props['Weather'] || props['Weather Description'] || '';
     const weatherMatch = weather === 'all' || weatherVal.toUpperCase() === weather;
-
-    // hit and run
     const hrVal = (props['Hit and Run'] || props['Hit and Run Flag'] || '').toUpperCase();
     const hitRunMatch = hitRun === 'all' || hrVal === hitRun;
-
-    // illumination
-    const illumVal = props['Illumination'] || props['Illumination Condition'] || '';
-    const illuminationMatch = illumination === 'all' || illumVal.toUpperCase() === illumination;
+    const illumVal = props['Illumination'] || props['Illumination Condition'] || props['Illumination Description'] || '';
+    const illuminationMatch = illumination === 'all' || illumVal.toUpperCase().trim() === illumination.toUpperCase().trim();
 
     return yearMatch && timeMatch && weatherMatch && hitRunMatch && illuminationMatch;
   });
@@ -86,37 +85,31 @@ function updateYearSummary(features, year) {
 
 function updateFilters() {
   const timeFilter = Number(timeSlider.value);
-  if (timeFilter === -1) {
-    selectedTime.textContent = '';
-    anyTimeLabel.style.display = 'block';
-  } else {
-    selectedTime.textContent = formatTime(timeFilter);
-    anyTimeLabel.style.display = 'none';
-  }
+  selectedTime.textContent = timeFilter === -1 ? '' : formatTime(timeFilter);
+  anyTimeLabel.style.display = timeFilter === -1 ? 'block' : 'none';
 
-  const filtered = filterFeatures(
-    originalData.features,
-    selectedYear,
-    timeFilter,
-    selectedWeather,
-    selectedHitRun,
-    selectedIllumination
-  );
+  const dataset = selectedDataset === 'injury-fatality' ? injuryFatalityData : totalData;
+  const filtered = filterFeatures(dataset.features, selectedYear, timeFilter, selectedWeather, selectedHitRun, selectedIllumination);
 
   map.getSource('nash-crash').setData({
     type: 'FeatureCollection',
     features: filtered,
   });
+  
 }
 
 map.on('load', async () => {
-  const response = await fetch('https://dar0010.github.io/nashville-crash-data/accidents_injury_fatality.geojson');
-  originalData = await response.json();
+  const [respInjury, respTotal] = await Promise.all([
+    fetch('https://dar0010.github.io/nashville-crash-data/accidents_injury_fatality.geojson'),
+    fetch('https://dar0010.github.io/nashville-crash-data/accidents.geojson')
+  ]);
+  injuryFatalityData = await respInjury.json();
+  totalData = await respTotal.json();
 
   // Add source and layer (your existing code)
   map.addSource('nash-crash', {
     type: 'geojson',
-    data: originalData,
+    data: totalData,
   });
 
   map.addLayer({
@@ -125,17 +118,10 @@ map.on('load', async () => {
     source: 'nash-crash',
     paint: {
       'circle-color': 'red',
-      'circle-opacity': 0.3,
+      'circle-opacity': 0.25,
       'circle-radius': [
-        'interpolate',
-        ['linear'],
-        ['get', 'Number of Motor Vehicles'],
-        1, 4,
-        2, 6,
-        3, 8,
-        4, 10,
-        5, 12,
-        6, 14
+        'interpolate', ['linear'], ['get', 'Number of Motor Vehicles'],
+        1, 4, 2, 6, 3, 8, 4, 10, 5, 12, 6, 14
       ]
     },
   });
@@ -172,59 +158,15 @@ map.on('load', async () => {
 
   // Scrollama setup and other logic continues here...
   const scroller = scrollama();
-
-  scroller
-    .setup({
-      step: '.step',
-      offset: 0.5,
-      debug: false,
-    })
-    .onStepEnter(({element, index}) => {
+  scroller.setup({ step: '.step', offset: 0.5, debug: false })
+    .onStepEnter(({ element, index }) => {
       document.querySelectorAll('.step').forEach(s => s.classList.remove('is-active'));
       element.classList.add('is-active');
 
-      if (index === 0) {
-        selectedYear = '2018';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
-      } else if (index === 1) {
-        selectedYear = '2019';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
-      } else if (index === 2) {
-        selectedYear = '2020';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
-      } else if (index === 3) {
-        selectedYear = '2021';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
-      } else if (index === 4) {
-        selectedYear = '2022';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
-      } else if (index === 5) {
-        selectedYear = '2023';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
-      } else if (index === 6) {
-        selectedYear = '2024';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
-      } else {
-        selectedYear = '2025';
-        selectedWeather = 'all';
-        selectedIllumination = 'all';
-        selectedHitRun = 'all';
-      }
+      selectedYear = index === 8 ? 'all' : (2017 + index).toString();
+      yearDropDown.value = selectedYear;
       updateFilters();
+
       window.addEventListener('resize', scroller.resize);
     });
 
