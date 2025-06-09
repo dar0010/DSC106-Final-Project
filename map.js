@@ -1,7 +1,9 @@
 import mapboxgl from 'https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/+esm';
 import scrollama from 'https://cdn.jsdelivr.net/npm/scrollama@3.2.0/+esm';
 
+
 mapboxgl.accessToken = 'pk.eyJ1IjoiZGFyMDA5IiwiYSI6ImNtYXI0ODUwbDA2eXgya29reHVlZjRkdHIifQ.XS8fk5IDe00_wwXmWsrT-A';
+
 
 const map = new mapboxgl.Map({
   container: 'map',
@@ -12,6 +14,7 @@ const map = new mapboxgl.Map({
   maxZoom: 18,
 });
 
+
 let totalData;
 let injuryFatalityData;
 let selectedDataset = 'total-accidents';
@@ -19,7 +22,7 @@ let selectedYear = 'all';
 let selectedWeather = 'all';
 let selectedHitRun = 'all';
 let selectedIllumination = 'all';
-let selectedDataset = 'total-accidents';
+
 
 const timeSlider = document.getElementById('time-slider');
 const selectedTime = document.getElementById('selected-time');
@@ -30,10 +33,12 @@ const weatherSelect = document.getElementById('weather-select');
 const hitrunSelect = document.getElementById('hitrun-select');
 const illumSelect = document.getElementById('illumination-select');
 
+
 function extractYear(dateTimeStr) {
   const datePart = dateTimeStr?.split(' ')[0];
   return datePart ? new Date(datePart).getFullYear() : null;
 }
+
 
 function minutesSinceMidnight(dateTimeStr) {
   const parts = dateTimeStr.split(' ');
@@ -46,6 +51,7 @@ function minutesSinceMidnight(dateTimeStr) {
   return hours * 60 + minutes;
 }
 
+
 function formatTime(minutes) {
   const hrs = Math.floor(minutes / 60);
   const mins = minutes % 60;
@@ -54,11 +60,13 @@ function formatTime(minutes) {
   return `${displayHr}:${mins.toString().padStart(2, '0')} ${ampm}`;
 }
 
+
 function filterFeatures(features, year, timeFilter, weather, hitRun, illumination) {
   return features.filter((feature) => {
     const props = feature.properties;
     const dt = props['Date and Time'];
     if (!dt) return false;
+
 
     const yearMatch = year === 'all' || extractYear(dt) === parseInt(year);
     const mins = minutesSinceMidnight(dt);
@@ -70,24 +78,28 @@ function filterFeatures(features, year, timeFilter, weather, hitRun, illuminatio
     const illumVal = props['Illumination'] || props['Illumination Condition'] || props['Illumination Description'] || '';
     const illuminationMatch = illumination === 'all' || illumVal.toUpperCase().trim() === illumination.toUpperCase().trim();
 
+
     return yearMatch && timeMatch && weatherMatch && hitRunMatch && illuminationMatch;
   });
 }
+
 
 function updateFilters() {
   const timeFilter = Number(timeSlider.value);
   selectedTime.textContent = timeFilter === -1 ? '' : formatTime(timeFilter);
   anyTimeLabel.style.display = timeFilter === -1 ? 'block' : 'none';
 
+
   const dataset = selectedDataset === 'injury-fatality' ? injuryFatalityData : totalData;
   const filtered = filterFeatures(dataset.features, selectedYear, timeFilter, selectedWeather, selectedHitRun, selectedIllumination);
+
 
   map.getSource('nash-crash').setData({
     type: 'FeatureCollection',
     features: filtered,
   });
-  
 }
+
 
 map.on('load', async () => {
   const [respInjury, respTotal] = await Promise.all([
@@ -97,10 +109,12 @@ map.on('load', async () => {
   injuryFatalityData = await respInjury.json();
   totalData = await respTotal.json();
 
+
   map.addSource('nash-crash', {
     type: 'geojson',
     data: totalData,
   });
+
 
   map.addLayer({
     id: 'crashes',
@@ -108,7 +122,7 @@ map.on('load', async () => {
     source: 'nash-crash',
     paint: {
       'circle-color': 'red',
-      'circle-opacity': 0.25,
+      'circle-opacity': 0.3,
       'circle-radius': [
         'interpolate', ['linear'], ['get', 'Number of Motor Vehicles'],
         1, 4, 2, 6, 3, 8, 4, 10, 5, 12, 6, 14
@@ -116,23 +130,10 @@ map.on('load', async () => {
     },
   });
 
-  map.addLayer({
-    id: 'injury-fatality',
-    type: 'circle',
-    source: 'injury-fatality',
-    layout: {visibility: 'none'},
-    paint: {
-      'circle-color': 'red',
-      'circle-opacity': 0.25,
-      'circle-radius': [
-        'interpolate', ['linear'], ['get', 'Number of Motor Vehicles'],
-        1, 4, 2, 6, 3, 8, 4, 10, 5, 12, 6, 14
-      ]
-    },
-  });
 
   const years = [...new Set(totalData.features.map(f => extractYear(f.properties['Date and Time'])).filter(y => y))].sort();
   yearDropDown.innerHTML = `<option value="all">All Years</option>${years.map(y => `<option value="${y}">${y}</option>`).join('')}`;
+
 
   datasetSelect.addEventListener('change', () => { selectedDataset = datasetSelect.value; updateFilters(); });
   yearDropDown.addEventListener('change', () => { selectedYear = yearDropDown.value; updateFilters(); });
@@ -140,6 +141,7 @@ map.on('load', async () => {
   hitrunSelect.addEventListener('change', () => { selectedHitRun = hitrunSelect.value; updateFilters(); });
   illumSelect.addEventListener('change', () => { selectedIllumination = illumSelect.value; updateFilters(); });
   timeSlider.addEventListener('input', updateFilters);
+
 
   map.on('mouseenter', 'crashes', (e) => {
     map.getCanvas().style.cursor = 'pointer';
@@ -158,44 +160,13 @@ map.on('load', async () => {
       .addTo(map);
   });
 
-    map.on('mouseleave', layerId, () => {
-      map.getCanvas().style.cursor = '';
-      const popups = document.getElementsByClassName('mapboxgl-popup');
-      if (popups.length) popups[0].remove();
-    });
+
+  map.on('mouseleave', 'crashes', () => {
+    map.getCanvas().style.cursor = '';
+    const popups = document.getElementsByClassName('mapboxgl-popup');
+    if (popups.length) popups[0].remove();
   });
 
-  // map.on('mouseenter', 'crashes', (e) => {
-  //   map.getCanvas().style.cursor = 'pointer';
-  //   const feature = e.features[0];
-  //   const props = feature.properties;
-  //   const coords = feature.geometry.coordinates;
-
-  //   const time = props['Date and Time'];
-  //   const vehicles = props['Number of Motor Vehicles'];
-  //   const type = props['Collision Type Description'];
-  //   const weather = props['Weather'] || props['Weather Description'];
-  //   const hitrun = props['Hit and Run'] || props['Hit and Run Flag'];
-  //   const illum = props['Illumination'] || props['Illumination Condition'];
-
-  //   new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
-  //     .setLngLat(coords)
-  //     .setHTML(`
-  //       <strong>Time:</strong> ${time}<br>
-  //       <strong>Vehicles:</strong> ${vehicles}<br>
-  //       <strong>Type:</strong> ${type}<br>
-  //       <strong>Weather:</strong> ${weather || 'N/A'}<br>
-  //       <strong>Hit & Run:</strong> ${hitrun || 'N/A'}<br>
-  //       <strong>Light:</strong> ${illum || 'N/A'}
-  //     `)
-  //     .addTo(map);
-  // });
-
-  // map.on('mouseleave', 'crashes', () => {
-  //   map.getCanvas().style.cursor = '';
-  //   const popups = document.getElementsByClassName('mapboxgl-popup');
-  //   if (popups.length) popups[0].remove();
-  // });
 
   const scroller = scrollama();
   scroller.setup({ step: '.step', offset: 0.5, debug: false })
@@ -203,13 +174,17 @@ map.on('load', async () => {
       document.querySelectorAll('.step').forEach(s => s.classList.remove('is-active'));
       element.classList.add('is-active');
 
+
       selectedYear = index === 8 ? 'all' : (2017 + index).toString();
       yearDropDown.value = selectedYear;
       updateFilters();
 
+
       window.addEventListener('resize', scroller.resize);
     });
 
+
   updateFilters();
-  console.log(data);
 });
+
+
