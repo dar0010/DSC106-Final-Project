@@ -12,6 +12,7 @@ const map = new mapboxgl.Map({
   maxZoom: 18,
 });
 
+// State variables
 let data;
 let totalData;
 let injuryFatalityData;
@@ -19,10 +20,11 @@ let selectedYear = 'all';
 let selectedWeather = 'all';
 let selectedHitRun = 'all';
 let selectedIllumination = 'all';
-let selectedDataset = 'total-accidents';
+let selectedDataset = 'total-accidents'; // Initial dataset
 let activeStepElement = null;
-let isScrolling = false; 
+let isScrolling = false; // Flag to prevent event feedback loops
 
+// DOM Elements
 const timeSlider = document.getElementById('time-slider');
 const selectedTime = document.getElementById('selected-time');
 const anyTimeLabel = document.getElementById('any-time');
@@ -32,11 +34,13 @@ const weatherSelect = document.getElementById('weather-select');
 const hitrunSelect = document.getElementById('hitrun-select');
 const illumSelect = document.getElementById('illumination-select');
 
+// Helper function to extract year from a "MM/DD/YYYY HH:MM AM/PM" string
 function extractYear(dateTimeStr) {
   const datePart = dateTimeStr?.split(' ')[0];
   return datePart ? new Date(datePart).getFullYear() : null;
 }
 
+// Helper function to convert time string to minutes since midnight
 function minutesSinceMidnight(dateTimeStr) {
   const parts = dateTimeStr.split(' ');
   if (parts.length !== 3) return null;
@@ -48,6 +52,7 @@ function minutesSinceMidnight(dateTimeStr) {
   return hours * 60 + minutes;
 }
 
+// Helper function to format minutes back to a displayable time string
 function formatTime(minutes) {
   const hrs = Math.floor(minutes / 60);
   const mins = minutes % 60;
@@ -56,6 +61,7 @@ function formatTime(minutes) {
   return `${displayHr}:${mins.toString().padStart(2, '0')} ${ampm}`;
 }
 
+// Main filtering function
 function filterFeatures(features, year, timeFilter, weather, hitRun, illumination) {
   return features.filter((feature) => {
     const props = feature.properties;
@@ -78,12 +84,12 @@ function filterFeatures(features, year, timeFilter, weather, hitRun, illuminatio
   });
 }
 
-// FIX: Corrected property names for injury and fatal counts based on provided column names
+// Updates the statistics in the active narrative step
 function updateStepStats(filteredFeatures) {
   if (!activeStepElement) return;
 
   const crashCount = filteredFeatures.length;
-  // Use 'Number of Injuries' and 'Number of Fatalities' as primary, fallback to 'sum_injury_count' etc.
+  // Use robust property checking for injuries and fatalities across both datasets
   const injuryCount = filteredFeatures.reduce((sum, f) => {
     const props = f.properties;
     return sum + (parseInt(props['Number of Injuries']) || parseInt(props['sum_injury_count']) || 0);
@@ -102,7 +108,7 @@ function updateStepStats(filteredFeatures) {
   if (fatalityEl) fatalityEl.textContent = fatalityCount.toLocaleString();
 }
 
-// NEW: Function to update the narrative text based on filters
+// Updates the dynamic narrative text in the active step
 function updateStepNarrative() {
     if (!activeStepElement) return;
 
@@ -124,8 +130,11 @@ function updateStepNarrative() {
     }
 }
 
+// Central function to update all visual elements based on current filter state
 function updateFilters() {
   const timeFilter = Number(timeSlider.value);
+  
+  // Update time slider display
   if (timeFilter === -1) {
     selectedTime.textContent = '';
     anyTimeLabel.style.display = 'block';
@@ -134,6 +143,7 @@ function updateFilters() {
     anyTimeLabel.style.display = 'none';
   }
 
+  // Set layer visibility and select the correct data source based on the dropdown
   if (selectedDataset === 'injury-fatality') {
     map.setLayoutProperty('total-accidents', 'visibility', 'none');
     map.setLayoutProperty('injury-fatality', 'visibility', 'visible');
@@ -144,6 +154,7 @@ function updateFilters() {
     data = totalData;
   }
   
+  // Apply all filters to the selected dataset
   const filtered = filterFeatures(
     data.features,
     selectedYear,
@@ -153,25 +164,30 @@ function updateFilters() {
     selectedIllumination
   );
   
+  // Update the map's data source with the filtered features
   const sourceName = selectedDataset;
   map.getSource(sourceName).setData({
     type: 'FeatureCollection',
     features: filtered,
   });
 
+  // Update the stats and narrative text
   updateStepStats(filtered);
-  updateStepNarrative(); // Call the new narrative function
+  updateStepNarrative();
 }
 
 map.on('load', async () => {
+  // Fetch both datasets
   const response_injury = await fetch('https://dar0010.github.io/nashville-crash-data/accidents_injury_fatality.geojson');
-  const response_total = await fetch('https://dar0010.github.io/nashville-crash-data/accidents.geojson');
+  const response_total = await fetch('https://dar0010.github.io/nashville-crash-data/accidents_excluded.geojson');
   injuryFatalityData = await response_injury.json();
   totalData = await response_total.json();
 
+  // Add both sources to the map
   map.addSource('total-accidents', { type: 'geojson', data: totalData });
   map.addSource('injury-fatality', { type: 'geojson', data: injuryFatalityData });
 
+  // Define a shared paint configuration for the circle layers
   const circlePaintConfig = {
     'circle-color': '#d22f27',
     'circle-opacity': 0.35,
@@ -181,45 +197,53 @@ map.on('load', async () => {
     ]
   };
 
+  // Add both layers, making only one visible initially
   map.addLayer({ id: 'total-accidents', type: 'circle', source: 'total-accidents', paint: circlePaintConfig });
   map.addLayer({ id: 'injury-fatality', type: 'circle', source: 'injury-fatality', layout: { visibility: 'none' }, paint: circlePaintConfig });
 
+  // Populate the year dropdown dynamically
   const years = [...new Set(totalData.features.map(f => extractYear(f.properties['Date and Time'])).filter(y => y))].sort();
   yearDropDown.innerHTML = `<option value="all">All Years</option>${years.map(y => `<option value="${y}">${y}</option>`).join('')}`;
 
-  // EVENT LISTENERS
+  // --- EVENT LISTENERS ---
   yearDropDown.addEventListener('change', () => {
-    if (isScrolling) return; 
+    if (isScrolling) return; // Prevent this from firing when scrollama updates the dropdown
 
     selectedYear = yearDropDown.value;
     const storyYears = ['all', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'];
     const targetStepIndex = storyYears.indexOf(selectedYear);
     
+    // If the selected year corresponds to a story step, scroll to it
     if (targetStepIndex > -1) {
         const targetEl = document.querySelector(`.step[data-step="${targetStepIndex}"]`);
         if (targetEl) {
             targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     } else {
-        updateFilters(); 
+        updateFilters(); // Otherwise, just update the filters
     }
   });
 
+  // Listeners for all other filters
   weatherSelect.addEventListener('change', () => { selectedWeather = weatherSelect.value; updateFilters(); });
   hitrunSelect.addEventListener('change', () => { selectedHitRun = hitrunSelect.value; updateFilters(); });
   illumSelect.addEventListener('change', () => { selectedIllumination = illumSelect.value; updateFilters(); });
   dataDropDown.addEventListener('change', () => { selectedDataset = dataDropDown.value; updateFilters(); });
   timeSlider.addEventListener('input', updateFilters);
 
-  // POPUP ON HOVER
+  // --- POPUP ON HOVER ---
   ['total-accidents', 'injury-fatality'].forEach(layerId => {
+    let popup; // Define popup variable in a higher scope to manage it
     map.on('mouseenter', layerId, (e) => {
       map.getCanvas().style.cursor = 'pointer';
       const feature = e.features[0];
       const props = feature.properties;
-      const coords = feature.geometry.coordinates;
+      const coords = feature.geometry.coordinates.slice();
+      
+      // Ensure the popup is removed if one already exists
+      if(popup) popup.remove();
 
-      new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
+      popup = new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
         .setLngLat(coords)
         .setHTML(`
           <strong>Time:</strong> ${props['Date and Time']}<br>
@@ -234,12 +258,11 @@ map.on('load', async () => {
 
     map.on('mouseleave', layerId, () => {
       map.getCanvas().style.cursor = '';
-      const popups = document.getElementsByClassName('mapboxgl-popup');
-      if (popups.length) popups[0].remove();
+      if(popup) popup.remove();
     });
   });
 
-  // SCROLLAMA SETUP
+  // --- SCROLLAMA SETUP ---
   const scroller = scrollama();
   scroller
     .setup({
@@ -248,29 +271,41 @@ map.on('load', async () => {
       debug: false,
     })
     .onStepEnter(({ element, index }) => {
+      // Manage active step highlighting
       document.querySelectorAll('.step').forEach(s => s.classList.remove('is-active'));
       element.classList.add('is-active');
       activeStepElement = element;
 
+      // Update the year based on the scroll step
       const storyYears = ['all', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'];
       selectedYear = storyYears[index] || 'all';
-      selectedDataset = (index === 0) ? 'total-accidents' : 'injury-fatality';
       
+      // --- FIX ---
+      // The following lines were removed because they forced the dataset to change,
+      // overriding the user's selection from the dropdown. By removing them, the
+      // `selectedDataset` variable retains the user's choice.
+      //
+      // REMOVED: selectedDataset = (index === 0) ? 'total-accidents' : 'injury-fatality';
+      // REMOVED: dataDropDown.value = selectedDataset;
+
+      // Sync the year dropdown with the scroll state without triggering its change event
       isScrolling = true;
       yearDropDown.value = selectedYear;
-      dataDropDown.value = selectedDataset;
-      requestAnimationFrame(() => { isScrolling = false; });
+      requestAnimationFrame(() => { isScrolling = false; }); // Reset flag after the next frame
 
+      // Update the map and stats with the new year and the user's chosen dataset
       updateFilters();
     });
 
   window.addEventListener('resize', scroller.resize);
   
+  // Set initial state for the first step on page load
   const initialStep = document.querySelector('.step[data-step="0"]');
   if(initialStep) {
     initialStep.classList.add('is-active');
     activeStepElement = initialStep;
   }
   
+  // Perform an initial filter and render on load
   updateFilters();
 });
