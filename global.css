@@ -164,12 +164,64 @@ header {
   font-size: 1.05rem;
 }
 
+.step h3 {
+  margin-bottom: 1rem;
+  color: #003049;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
 .step.is-active {
   background: #fff0f0;
   border-color: #d22f27;
-  font-weight: 700;
-  color: #111;
 }
+
+.step.is-active h3 {
+  color: #d22f27;
+}
+
+.dynamic-narrative {
+  font-style: italic;
+  color: #555;
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: #f7f7f7;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  min-height: 2.5em; 
+}
+
+.step-summary {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: space-around;
+  text-align: center;
+}
+
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #003049;
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.25rem;
+}
+
 
 #map {
   flex: 1;
@@ -215,6 +267,7 @@ header {
     position: relative;
     height: 400px;
     margin-top: 2rem;
+    order: -1; /* Puts map before story on mobile */
   }
   .writeup {
     margin: 3rem 1rem;

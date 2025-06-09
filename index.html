@@ -6,7 +6,8 @@
   <title>Nashville Crash Data 🚗</title>
   <link href="global.css" rel="stylesheet" />
   <script type="module" src="map.js" defer></script>
-  <script type="module" src="dots.js" defer></script>
+  <!-- dots.js is not used in the provided code, but keeping it if you plan to use it -->
+  <script type="module" src="dots.js" defer></script> 
   <script src="https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/dist/mapbox-gl.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/mapbox-gl@2.15.0/dist/mapbox-gl.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -14,7 +15,6 @@
 <body>
   <header class="filter-bar">
     <h1 class="site-title">Crashville 🚗</h1>
-
 
     <div class="filter-group">
       <label for="dataset-select">Choose dataset:</label>
@@ -24,12 +24,10 @@
       </select>
     </div>
 
-
     <div class="filter-group">
       <label for="year-select">Filter by year:</label>
       <select id="year-select"><option>Loading...</option></select>
     </div>
-
 
     <div class="filter-group">
       <label for="weather-select">Filter by weather:</label>
@@ -43,7 +41,6 @@
       </select>
     </div>
 
-
     <div class="filter-group">
       <label for="hitrun-select">Filter by hit‑run:</label>
       <select id="hitrun-select">
@@ -52,7 +49,6 @@
         <option value="N">No</option>
       </select>
     </div>
-
 
     <div class="filter-group">
       <label for="illumination-select">Filter by illumination:</label>
@@ -66,9 +62,8 @@
       </select>
     </div>
 
-
-<div id="time-filter">      
-  <label for="time-slider">Filter by time:</label>
+    <div id="time-filter">      
+      <label for="time-slider">Filter by time:</label>
       <input type="range" id="time-slider" min="-1" max="1439" value="-1" step="1" />
       <div class="time-display">
         <time id="selected-time"></time>
@@ -77,41 +72,126 @@
     </div>
   </header>
 
-
-    <div class="writeup">
-    <h2>Write up:</h2>
+  <div class="writeup">
+    <h2>Navigating Nashville's Roads</h2>
     <p>
-      Example text
-    </p>
-    <p>
-      Example text
+      This visualization explores traffic accident data in Nashville, providing an interactive way to understand where and when incidents occur. Using a "scrollytelling" format, we'll guide you through different facets of the data, from a high-level overview to a detailed look at the most severe accidents. Use the filters above at any time to explore the data on your own.
     </p>
   </div>
 
-
   <div id="scrolly">
     <div id="map-story">
-      <div class="step" data-step="0">all filler text</div>
-      <div class="step" data-step="1">2018 filler text</div>
-      <div class="step" data-step="2">2019 filler text</div>
-      <div class="step" data-step="3">2020 filler text</div>
-      <div class="step" data-step="4">2021 filler text</div>
-      <div class="step" data-step="5">2022 filler text</div>
-      <div class="step" data-step="6">2023 filler text</div>
-      <div class="step" data-step="7">2024 filler text</div>
-      <div class="step" data-step="8">2025 filler text</div>
+      
+      <div class="step" data-step="0">
+        <h3>The Full Picture</h3>
+        <p>This is every reported crash across all available years. While it shows that accidents are widespread, the sheer volume of data makes it difficult to identify specific high-risk zones.</p>
+        <p class="dynamic-narrative"></p>
+        <div class="step-summary">
+          <div class="stat-item"><span class="stat-number stat-crashes">--</span><span class="stat-label">Crashes</span></div>
+          <div class="stat-item"><span class="stat-number stat-injuries">--</span><span class="stat-label">Injuries</span></div>
+          <div class="stat-item"><span class="stat-number stat-fatalities">--</span><span class="stat-label">Fatalities</span></div>
+        </div>
+      </div>
+      
+      <div class="step" data-step="1">
+        <h3>Focusing on Severe Incidents: 2018</h3>
+        <p>To find meaningful patterns, let's filter for only those crashes that resulted in an injury or fatality. For 2018, we can immediately see concentrations along major highways.</p>
+        <p class="dynamic-narrative"></p>
+        <div class="step-summary">
+          <div class="stat-item"><span class="stat-number stat-crashes">--</span><span class="stat-label">Crashes</span></div>
+          <div class="stat-item"><span class="stat-number stat-injuries">--</span><span class="stat-label">Injuries</span></div>
+          <div class="stat-item"><span class="stat-number stat-fatalities">--</span><span class="stat-label">Fatalities</span></div>
+        </div>
+      </div>
+      
+      <div class="step" data-step="2">
+        <h3>A Look at 2019</h3>
+        <p>The pattern of severe incidents continues in 2019, reinforcing that the interstate system and major connecting roads are hotspots for dangerous collisions.</p>
+        <p class="dynamic-narrative"></p>
+        <div class="step-summary">
+          <div class="stat-item"><span class="stat-number stat-crashes">--</span><span class="stat-label">Crashes</span></div>
+          <div class="stat-item"><span class="stat-number stat-injuries">--</span><span class="stat-label">Injuries</span></div>
+          <div class="stat-item"><span class="stat-number stat-fatalities">--</span><span class="stat-label">Fatalities</span></div>
+        </div>
+      </div>
+
+      <div class="step" data-step="3">
+        <h3>The Pandemic Year: 2020</h3>
+        <p>Despite potential changes in traffic volume during 2020, the geographic distribution of severe crashes remained remarkably consistent.</p>
+        <p class="dynamic-narrative"></p>
+        <div class="step-summary">
+          <div class="stat-item"><span class="stat-number stat-crashes">--</span><span class="stat-label">Crashes</span></div>
+          <div class="stat-item"><span class="stat-number stat-injuries">--</span><span class="stat-label">Injuries</span></div>
+          <div class="stat-item"><span class="stat-number stat-fatalities">--</span><span class="stat-label">Fatalities</span></div>
+        </div>
+      </div>
+
+      <div class="step" data-step="4">
+        <h3>Continuing Trends in 2021</h3>
+        <p>As we move into 2021, the data story remains unchanged. The most severe outcomes are consistently tied to areas with higher speed limits.</p>
+        <p class="dynamic-narrative"></p>
+        <div class="step-summary">
+          <div class="stat-item"><span class="stat-number stat-crashes">--</span><span class="stat-label">Crashes</span></div>
+          <div class="stat-item"><span class="stat-number stat-injuries">--</span><span class="stat-label">Injuries</span></div>
+          <div class="stat-item"><span class="stat-number stat-fatalities">--</span><span class="stat-label">Fatalities</span></div>
+        </div>
+      </div>
+
+       <div class="step" data-step="5">
+        <h3>Severe Crashes in 2022</h3>
+        <p>This year follows the established pattern. Notice the clusters around downtown and the junctions where major interstates intersect.</p>
+        <p class="dynamic-narrative"></p>
+        <div class="step-summary">
+          <div class="stat-item"><span class="stat-number stat-crashes">--</span><span class="stat-label">Crashes</span></div>
+          <div class="stat-item"><span class="stat-number stat-injuries">--</span><span class="stat-label">Injuries</span></div>
+          <div class="stat-item"><span class="stat-number stat-fatalities">--</span><span class="stat-label">Fatalities</span></div>
+        </div>
+      </div>
+      
+      <div class="step" data-step="6">
+        <h3>Data for 2023</h3>
+        <p>Analysis for 2023 continues to show similar trends. Feel free to use the filters to explore conditions like weather or lighting.</p>
+        <p class="dynamic-narrative"></p>
+        <div class="step-summary">
+          <div class="stat-item"><span class="stat-number stat-crashes">--</span><span class="stat-label">Crashes</span></div>
+          <div class="stat-item"><span class="stat-number stat-injuries">--</span><span class="stat-label">Injuries</span></div>
+          <div class="stat-item"><span class="stat-number stat-fatalities">--</span><span class="stat-label">Fatalities</span></div>
+        </div>
+      </div>
+
+      <div class="step" data-step="7">
+        <h3>Data for 2024</h3>
+        <p>Explore the most recent data available for 2024.</p>
+        <p class="dynamic-narrative"></p>
+        <div class="step-summary">
+          <div class="stat-item"><span class="stat-number stat-crashes">--</span><span class="stat-label">Crashes</span></div>
+          <div class="stat-item"><span class="stat-number stat-injuries">--</span><span class="stat-label">Injuries</span></div>
+          <div class="stat-item"><span class="stat-number stat-fatalities">--</span><span class="stat-label">Fatalities</span></div>
+        </div>
+      </div>
+      
+       <div class="step" data-step="8">
+        <h3>Data for 2025</h3>
+        <p>Explore the most recent data available for 2025.</p>
+        <p class="dynamic-narrative"></p>
+        <div class="step-summary">
+          <div class="stat-item"><span class="stat-number stat-crashes">--</span><span class="stat-label">Crashes</span></div>
+          <div class="stat-item"><span class="stat-number stat-injuries">--</span><span class="stat-label">Injuries</span></div>
+          <div class="stat-item"><span class="stat-number stat-fatalities">--</span><span class="stat-label">Fatalities</span></div>
+        </div>
+      </div>
+
     </div>  
     <div id="map"></div>
   </div>
 
-
   <div class="writeup">
-    <h2>Write up:</h2>
+    <h2>Project Reflections</h2>
     <p>
       So far we have converted our crash data into GeoJSON and plotted it on a map of Nashville. We've added time‐based filters, click popups, and variable circle sizes based on number of vehicles involved. We now offer filters for year, weather, hit/run events, lighting, and an optional view focused on injuries and fatalities to highlight the most severe incidents.
     </p>
     <p>
-      Implementing the different datasets and making the scroll narration sync with the injury/fatality view was the biggest challenge. We're excited to explore adding dot animations to represent death/injury counts further in our next update.
+      Implementing the dynamic summary statistics and syncing the scroll narrative with the filter controls were the biggest new challenges. By linking the user's scroll position to the data filters—and vice versa—we've created a more intuitive and guided exploration of the dataset. We're excited to explore adding more advanced visualizations, like dot animations for injury/fatality counts, in a future update.
     </p>
   </div>
 </body>
